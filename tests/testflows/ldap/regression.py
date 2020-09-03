@@ -23,7 +23,9 @@ xfails = {
     "connection protocols/starttls with custom port":
      [(Fail, "it seems that starttls is not enabled by default on custom plain-text ports in LDAP server")],
     "connection protocols/tls cipher suite":
-     [(Fail, "can't get it to work")]
+     [(Fail, "can't get it to work")],
+    "user config/":
+     [(Error, "test should be changed after https://github.com/ClickHouse/ClickHouse/pull/14492")],
 }
 
 @TestFeature
