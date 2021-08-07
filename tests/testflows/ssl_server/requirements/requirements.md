@@ -66,10 +66,16 @@
     * 3.6.5 [Invalid Certificate Handler](#invalid-certificate-handler)
         * 3.6.5.3.1 [RQ.SRS-017.ClickHouse.Security.SSL.Server.Certificates.InvalidCertificateHandler](#rqsrs-017clickhousesecuritysslservercertificatesinvalidcertificatehandler)
   * 3.7 [Session](#session)
-      * 3.7.5.1 [RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.Cache](#rqsrs-017clickhousesecuritysslserversessioncache)
-      * 3.7.5.2 [RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.CacheSize](#rqsrs-017clickhousesecuritysslserversessioncachesize)
-      * 3.7.5.3 [RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.IdContext](#rqsrs-017clickhousesecuritysslserversessionidcontext)
-      * 3.7.5.4 [RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.Timeout](#rqsrs-017clickhousesecuritysslserversessiontimeout)
+    * 3.7.1 [RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.Cache](#rqsrs-017clickhousesecuritysslserversessioncache)
+    * 3.7.2 [RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.CacheSize](#rqsrs-017clickhousesecuritysslserversessioncachesize)
+    * 3.7.3 [RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.IdContext](#rqsrs-017clickhousesecuritysslserversessionidcontext)
+    * 3.7.4 [RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.Timeout](#rqsrs-017clickhousesecuritysslserversessiontimeout)
+  * 3.8 [Dynamic SSL Context](#dynamic-ssl-context)
+      * 3.8.4.1 [RQ.SRS-017.ClickHouse.Security.SSL.Server.DynamicContext.Reload](#rqsrs-017clickhousesecuritysslserverdynamiccontextreload)
+    * 3.8.5 [Certificate Reload](#certificate-reload)
+      * 3.8.5.1 [RQ.SRS-017.ClickHouse.Security.SSL.Server.DynamicContext.Certificate.Reload](#rqsrs-017clickhousesecuritysslserverdynamiccontextcertificatereload)
+    * 3.8.6 [Private Key Reload](#private-key-reload)
+      * 3.8.6.1 [RQ.SRS-017.ClickHouse.Security.SSL.Server.DynamicContext.PrivateKey.Reload](#rqsrs-017clickhousesecuritysslserverdynamiccontextprivatekeyreload)
 
 ## Introduction
 
@@ -207,7 +213,7 @@ using the `<requireTLSv1_3>` parameter to boolean `true`.
 version: 1.0
 
 [ClickHouse] SHALL support specifying cipher suites to be used
-for [SSL] connection using using the `<cipherList>` parameter
+for [SSL] connection using the `<cipherList>` parameter
 in form of a string that SHALL use [OpenSSL cipher list format] notation
 ```
 (e.g. "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH")
@@ -439,7 +445,7 @@ version: 1.0
 certificate in the [PEM format] using the `<certificateFile>` parameter in the
 `<yandex><openSSL><server>` section of the `config.xml`.
 When the private key specified by the `<privateKeyFile>` parameter contains
-the certificate the this parameter SHALL be ignored.
+the certificate then this parameter SHALL be ignored.
 
 ```xml
 <yandex>
@@ -495,13 +501,15 @@ using the `<verificationMode>` parameter in the `<yandex><openSSL><server>` sect
 ###### RQ.SRS-017.ClickHouse.Security.SSL.Server.Certificates.VerificationMode.None
 version: 1.0
 
-[ClickHouse] SHALL not perform client certificate validation when the `<verificationMode>` parameter in the `<yandex><openSSL><server>` section of the `config.xml` is set to `none`
+[ClickHouse] SHALL not perform client certificate validation when the `<verificationMode>` parameter
+in the `<yandex><openSSL><server>` section of the `config.xml` is set to `none`
 by not sending a `client certificate request` to the client so that the client will not send a certificate.
 
 ###### RQ.SRS-017.ClickHouse.Security.SSL.Server.Certificates.VerificationMode.Relaxed
 version: 1.0
 
-[ClickHouse] SHALL perform relaxed client certificate validation when the `<verificationMode>` parameter in the `<yandex><openSSL><server>` section of the `config.xml` is set to `relaxed` by
+[ClickHouse] SHALL perform relaxed client certificate validation when the `<verificationMode>` parameter
+in the `<yandex><openSSL><server>` section of the `config.xml` is set to `relaxed` by
 sending a `client certificate request` to the client. The certificate SHALL only be checked if client sends it.
 If the client certificate verification process fails, the TLS/SSL handshake SHALL be immediately
 terminated with an alert message containing the reason for the verification failure.
@@ -566,7 +574,7 @@ that SHALL be used for confirming invalid certificates using a string as the val
 
 ### Session
 
-##### RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.Cache
+#### RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.Cache
 version: 1.0
 
 [ClickHouse] SHALL support enabling or disabling session caching using a boolean as a value of the
@@ -583,7 +591,7 @@ version: 1.0
 </yandex>
 ```
 
-##### RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.CacheSize
+#### RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.CacheSize
 version: 1.0
 
 [ClickHouse] SHALL support specifying the maximum size of the server session cache as the number of sessions
@@ -604,7 +612,7 @@ using an integer as a value of the `<sessionCacheSize>` parameter in the
 </yandex>
 ```
 
-##### RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.IdContext
+#### RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.IdContext
 version: 1.0
 
 [ClickHouse] SHALL support specifying unique session ID context, which SHALL become part of each
@@ -628,7 +636,7 @@ in the `<yandex><openSSL><server>` section of the `config.xml`.
 </yandex>
 ```
 
-##### RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.Timeout
+#### RQ.SRS-017.ClickHouse.Security.SSL.Server.Session.Timeout
 version: 1.0
 
 [ClickHouse] SHALL support setting the timeout in seconds of sessions cached on the server
@@ -645,6 +653,37 @@ using an integer as a value of the <sessionTimeout>` parameter in the
     </openSSL>
 </yandex>
 ```
+
+### Dynamic SSL Context
+
+##### RQ.SRS-017.ClickHouse.Security.SSL.Server.DynamicContext.Reload
+
+[ClickHouse] SHALL reload dynamic SSL context any time `config.xml` configuration file
+or any of its parts defined inside the `/etc/clickhouse-server/configs.d/`
+directory changes and causes `/var/lib/clickhouse/preprocessed_configs/config.xml`
+configuration file generation and reload.
+
+#### Certificate Reload
+
+##### RQ.SRS-017.ClickHouse.Security.SSL.Server.DynamicContext.Certificate.Reload
+version: 1.0
+
+[ClickHouse] SHALL reload server SSL certificate specified 
+by the `<certificateFile>` parameter in the `<yandex><openSSL><server>`
+section of the `config.xml` any time [Dynamic SSL Context] is reloaded. 
+and the reloaded SSL server certificate SHALL be immediately applied
+to any to new SSL connections made to the server.
+
+#### Private Key Reload
+
+##### RQ.SRS-017.ClickHouse.Security.SSL.Server.DynamicContext.PrivateKey.Reload
+version: 1.0
+
+[ClickHouse] SHALL reload server SSL private key specified 
+by the `<privateKeyFile>` parameter in the `<yandex><openSSL><server>` section
+of the `config.xml` any time [Dynamic SSL Context] is reloaded  
+and the reloaded SSL private key SHALL be immediately applied
+to any new SSL connections made to the server.
 
 [SRS]: #srs
 [SSL Protocol]: #ssl-protocol
@@ -666,3 +705,4 @@ using an integer as a value of the <sessionTimeout>` parameter in the
 [TCP]: https://en.wikipedia.org/wiki/Transmission_Control_Protocol
 [SSL]: https://www.ssl.com/faqs/faq-what-is-ssl/
 [ClickHouse]: https://clickhouse.tech
+[Dynamic SSL Context]: #dynamic-ssl-context
