@@ -27,6 +27,7 @@ def regression(self, local, clickhouse_binary_path, stress=None):
             Feature(test=load("datetime64_extended_range.regression", "regression"), parallel=True, executor=pool)(**args)
             Feature(test=load("kerberos.regression", "regression"), parallel=True, executor=pool)(**args)
             Feature(test=load("extended_precision_data_types.regression", "regression"), parallel=True, executor=pool)(**args)
+            Feature(test=load("ssl_server.regression", "regression"), parallel=True, executor=pool)(**args)
         finally:
             join()
 
