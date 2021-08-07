@@ -8,7 +8,7 @@ append_path(sys.path, "..")
 
 from helpers.cluster import Cluster
 from helpers.argparser import argparser
-from ssl_server.requirements import QA_SRS017_ClickHouse_Security_SSL_Server
+from ssl_server.requirements import SRS017_ClickHouse_Security_SSL_Server
 
 xfails = {
 }
@@ -22,7 +22,7 @@ xflags = {
 @XFlags(xflags)
 @Name("ssl server")
 @Specifications(
-    QA_SRS017_ClickHouse_Security_SSL_Server
+    SRS017_ClickHouse_Security_SSL_Server
 )
 def regression(self, local, clickhouse_binary_path, stress=None):
     """ClickHouse security SSL server regression.
@@ -39,6 +39,7 @@ def regression(self, local, clickhouse_binary_path, stress=None):
             docker_compose_project_dir=os.path.join(current_dir(), "ssl_server_env")) as cluster:
         self.context.cluster = cluster
 
+        Feature(run=load("ssl_server.tests.sanity", "feature"))
         Feature(run=load("ssl_server.tests.dynamic_ssl_context", "feature"))
 
 if main():

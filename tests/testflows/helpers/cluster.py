@@ -215,7 +215,7 @@ class ClickHouseNode(Node):
                     echo -e \"{sql[:100]}...\" > {query.name}
                     {command}
                 """
-                with Step("executing command", description=description, format_description=False) if steps else NullStep():
+                with step("executing command", description=description, format_description=False) if steps else NullStep():
                     try:
                         r = self.cluster.bash(None)(command, *args, **kwargs)
                     except ExpectTimeoutError:
@@ -225,7 +225,7 @@ class ClickHouseNode(Node):
             for setting in settings:
                 name, value = setting
                 command += f" --{name} \"{value}\""
-            with Step("executing command", description=command, format_description=False) if steps else NullStep():
+            with step("executing command", description=command, format_description=False) if steps else NullStep():
                 try:
                     r = self.cluster.bash(self.name)(command, *args, **kwargs)
                 except ExpectTimeoutError:
