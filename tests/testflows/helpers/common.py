@@ -122,7 +122,7 @@ def create_xml_config_content(entries, config_file, config_d_dir="/etc/clickhous
     return Config(content, path, name, uid, "config.xml")
 
 
-def add_config(config, timeout=300, restart=False, modify=False):
+def add_config(config, timeout=300, restart=False, modify=False, node=None):
     """Add dynamic configuration file to ClickHouse.
 
     :param config: configuration file description
@@ -130,7 +130,8 @@ def add_config(config, timeout=300, restart=False, modify=False):
     :param restart: restart server, default: False
     :param modify: only modify configuration file, default: False
     """
-    node = current().context.node
+    if node is None:
+        node = current().context.node
     cluster = current().context.cluster
 
     def check_preprocessed_config_is_updated(after_removal=False):
@@ -231,3 +232,20 @@ def add_config(config, timeout=300, restart=False, modify=False):
 
                     with And("I wait for config to be reloaded"):
                         wait_for_config_to_be_loaded()
+
+
+@TestStep(When)
+def copy(self, dest_node, src_path, dest_path, bash=None, binary=False, eof="EOF", src_node=None):
+    """Copy file from source to destination node.
+    """
+    if binary:
+        raise NotImplementedError("not yet implemented; need to use base64 encoding")
+
+    bash = self.context.cluster.bash(node=src_node)
+
+    cmd = bash(f"cat {src_path}")
+
+    assert cmd.exitcode == 0, error()
+    contents = cmd.output
+
+    dest_node.command(f"cat << {eof} > {dest_path}\n{contents}\n{eof}")

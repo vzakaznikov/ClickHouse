@@ -124,7 +124,6 @@ class Node(object):
         return r
 
 
-
 class ClickHouseNode(Node):
     """Node with ClickHouse server.
     """
@@ -192,7 +191,7 @@ class ClickHouseNode(Node):
             self.wait_healthy(timeout)
 
     def query(self, sql, message=None, exitcode=None, steps=True, no_checks=False,
-              raise_on_exception=False, step=By, settings=None, *args, **kwargs):
+              raise_on_exception=False, step=By, settings=None, secure=False, *args, **kwargs):
         """Execute and check query.
         :param sql: sql query
         :param message: expected message that should be in the output, default: None
@@ -203,11 +202,15 @@ class ClickHouseNode(Node):
         if hasattr(current().context, "default_query_settings"):
             settings += current().context.default_query_settings
 
+        client = "clickhouse client -n"
+        if secure:
+            client += " -s"
+
         if len(sql) > 1024:
             with tempfile.NamedTemporaryFile("w", encoding="utf-8") as query:
                 query.write(sql)
                 query.flush()
-                command = f"cat \"{query.name}\" | {self.cluster.docker_compose} exec -T {self.name} clickhouse client -n"
+                command = f"cat \"{query.name}\" | {self.cluster.docker_compose} exec -T {self.name} {client}"
                 for setting in settings:
                     name, value = setting
                     command += f" --{name} \"{value}\""
@@ -221,7 +224,7 @@ class ClickHouseNode(Node):
                     except ExpectTimeoutError:
                         self.cluster.close_bash(None)
         else:
-            command = f"echo -e \"{sql}\" | clickhouse client -n"
+            command = f"echo -e \"{sql}\" | {client}"
             for setting in settings:
                 name, value = setting
                 command += f" --{name} \"{value}\""
@@ -310,7 +313,9 @@ class Cluster(object):
                 shell.timeout = 30
                 shell("echo 1")
                 break
-            except:
+            except IOError:
+                raise
+            except Exception as exc:
                 shell.__exit__(None, None, None)
                 if time.time() - time_start > timeout:
                     raise RuntimeError(f"failed to open control shell")
@@ -352,7 +357,9 @@ class Cluster(object):
                 shell.timeout = 30
                 shell("echo 1")
                 break
-            except:
+            except IOError:
+                raise
+            except Exception as exc:
                 shell.__exit__(None, None, None)
                 if time.time() - time_start > timeout:
                     raise RuntimeError(f"failed to open bash to node {node}")
@@ -387,7 +394,9 @@ class Cluster(object):
                         self._bash[id].timeout = 30
                         self._bash[id]("echo 1")
                         break
-                    except:
+                    except IOError:
+                        raise
+                    except Exception as exc:
                         self._bash[id].__exit__(None, None, None)
                         if time.time() - time_start > timeout:
                             raise RuntimeError(f"failed to open bash to node {node}")
@@ -465,6 +474,19 @@ class Cluster(object):
                     self._control_shell.__exit__(None, None, None)
                     self._control_shell = None
             return cmd
+
+    def temp_path(self):
+        """Return temporary folder path.
+        """
+        p = f"{self.environ['CLICKHOUSE_TESTS_DIR']}/_temp"
+        if not os.path.exists(p):
+            os.mkdir(p)
+        return p
+
+    def temp_file(self, name):
+        """Return absolute temporary file path.
+        """
+        return f"{os.path.join(self.temp_path(), name)}"
 
     def up(self, timeout=30*60):
         if self.local:
