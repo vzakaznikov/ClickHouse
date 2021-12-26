@@ -1,9 +1,7 @@
-option (USE_INTERNAL_BOOST_LIBRARY "Use internal Boost library" ${NOT_UNBUNDLED})
+option (USE_INTERNAL_BOOST_LIBRARY "Use internal Boost library" ON)
 
 if (NOT USE_INTERNAL_BOOST_LIBRARY)
-    # 1.70 like in contrib/boost
-    # 1.71 on CI
-    set(BOOST_VERSION 1.71)
+    set(BOOST_VERSION 1.78)
 
     find_package(Boost ${BOOST_VERSION} COMPONENTS
         system
@@ -13,11 +11,12 @@ if (NOT USE_INTERNAL_BOOST_LIBRARY)
         regex
         context
         coroutine
+        graph
     )
 
-    if(Boost_INCLUDE_DIR AND Boost_FILESYSTEM_LIBRARY AND Boost_FILESYSTEM_LIBRARY AND
+    if(Boost_INCLUDE_DIR AND Boost_FILESYSTEM_LIBRARY AND
         Boost_PROGRAM_OPTIONS_LIBRARY AND Boost_REGEX_LIBRARY AND Boost_SYSTEM_LIBRARY AND Boost_CONTEXT_LIBRARY AND
-        Boost_COROUTINE_LIBRARY)
+        Boost_COROUTINE_LIBRARY AND Boost_GRAPH_LIBRARY)
 
         set(EXTERNAL_BOOST_FOUND 1)
 
@@ -32,6 +31,7 @@ if (NOT USE_INTERNAL_BOOST_LIBRARY)
         add_library (_boost_system INTERFACE)
         add_library (_boost_context INTERFACE)
         add_library (_boost_coroutine INTERFACE)
+        add_library (_boost_graph INTERFACE)
 
         target_link_libraries (_boost_filesystem INTERFACE ${Boost_FILESYSTEM_LIBRARY})
         target_link_libraries (_boost_iostreams INTERFACE ${Boost_IOSTREAMS_LIBRARY})
@@ -40,6 +40,7 @@ if (NOT USE_INTERNAL_BOOST_LIBRARY)
         target_link_libraries (_boost_system INTERFACE ${Boost_SYSTEM_LIBRARY})
         target_link_libraries (_boost_context INTERFACE ${Boost_CONTEXT_LIBRARY})
         target_link_libraries (_boost_coroutine INTERFACE ${Boost_COROUTINE_LIBRARY})
+        target_link_libraries (_boost_graph INTERFACE ${Boost_GRAPH_LIBRARY})
 
         add_library (boost::filesystem ALIAS _boost_filesystem)
         add_library (boost::iostreams ALIAS _boost_iostreams)
@@ -48,6 +49,7 @@ if (NOT USE_INTERNAL_BOOST_LIBRARY)
         add_library (boost::system ALIAS _boost_system)
         add_library (boost::context ALIAS _boost_context)
         add_library (boost::coroutine ALIAS _boost_coroutine)
+        add_library (boost::graph ALIAS _boost_graph)
     else()
         set(EXTERNAL_BOOST_FOUND 0)
         message (${RECONFIGURE_MESSAGE_LEVEL} "Can't find system boost")
@@ -62,9 +64,11 @@ if (NOT EXTERNAL_BOOST_FOUND)
 
     set (SRCS_FILESYSTEM
         "${LIBRARY_DIR}/libs/filesystem/src/codecvt_error_category.cpp"
+        "${LIBRARY_DIR}/libs/filesystem/src/directory.cpp"
+        "${LIBRARY_DIR}/libs/filesystem/src/exception.cpp"
         "${LIBRARY_DIR}/libs/filesystem/src/operations.cpp"
-        "${LIBRARY_DIR}/libs/filesystem/src/path_traits.cpp"
         "${LIBRARY_DIR}/libs/filesystem/src/path.cpp"
+        "${LIBRARY_DIR}/libs/filesystem/src/path_traits.cpp"
         "${LIBRARY_DIR}/libs/filesystem/src/portability.cpp"
         "${LIBRARY_DIR}/libs/filesystem/src/unique_path.cpp"
         "${LIBRARY_DIR}/libs/filesystem/src/utf8_codecvt_facet.cpp"
@@ -122,24 +126,11 @@ if (NOT EXTERNAL_BOOST_FOUND)
     # regex
 
     set (SRCS_REGEX
-        "${LIBRARY_DIR}/libs/regex/src/c_regex_traits.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/cpp_regex_traits.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/cregex.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/fileiter.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/icu.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/instances.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/internals.hpp"
         "${LIBRARY_DIR}/libs/regex/src/posix_api.cpp"
         "${LIBRARY_DIR}/libs/regex/src/regex_debug.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/regex_raw_buffer.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/regex_traits_defaults.cpp"
         "${LIBRARY_DIR}/libs/regex/src/regex.cpp"
         "${LIBRARY_DIR}/libs/regex/src/static_mutex.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/usinstances.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/w32_regex_traits.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/wc_regex_traits.cpp"
         "${LIBRARY_DIR}/libs/regex/src/wide_posix_api.cpp"
-        "${LIBRARY_DIR}/libs/regex/src/winstances.cpp"
     )
 
     add_library (_boost_regex ${SRCS_REGEX})
@@ -162,7 +153,6 @@ if (NOT EXTERNAL_BOOST_FOUND)
 
     set (SRCS_CONTEXT
         "${LIBRARY_DIR}/libs/context/src/dummy.cpp"
-        "${LIBRARY_DIR}/libs/context/src/execution_context.cpp"
         "${LIBRARY_DIR}/libs/context/src/posix/stack_traits.cpp"
     )
 
@@ -191,6 +181,12 @@ if (NOT EXTERNAL_BOOST_FOUND)
             "${LIBRARY_DIR}/libs/context/src/asm/jump_ppc64_sysv_elf_gas.S"
             "${LIBRARY_DIR}/libs/context/src/asm/make_ppc64_sysv_elf_gas.S"
             "${LIBRARY_DIR}/libs/context/src/asm/ontop_ppc64_sysv_elf_gas.S"
+        )
+    elseif (ARCH_RISCV64)
+        set (SRCS_CONTEXT ${SRCS_CONTEXT}
+            "${LIBRARY_DIR}/libs/context/src/asm/jump_riscv64_sysv_elf_gas.S"
+            "${LIBRARY_DIR}/libs/context/src/asm/make_riscv64_sysv_elf_gas.S"
+            "${LIBRARY_DIR}/libs/context/src/asm/ontop_riscv64_sysv_elf_gas.S"
         )
     elseif(OS_DARWIN)
         set (SRCS_CONTEXT ${SRCS_CONTEXT}
@@ -221,4 +217,27 @@ if (NOT EXTERNAL_BOOST_FOUND)
     add_library (boost::coroutine ALIAS _boost_coroutine)
     target_include_directories (_boost_coroutine PRIVATE ${LIBRARY_DIR})
     target_link_libraries(_boost_coroutine PRIVATE _boost_context)
+
+    # graph
+
+    set (SRCS_GRAPH
+        "${LIBRARY_DIR}/libs/graph/src/graphml.cpp"
+        "${LIBRARY_DIR}/libs/graph/src/read_graphviz_new.cpp"
+    )
+
+    add_library (_boost_graph ${SRCS_GRAPH})
+    add_library (boost::graph ALIAS _boost_graph)
+    target_include_directories (_boost_graph PRIVATE ${LIBRARY_DIR})
+    target_link_libraries(_boost_graph PRIVATE _boost_regex)
+
+    # circular buffer
+    add_library(_boost_circular_buffer INTERFACE)
+    add_library(boost::circular_buffer ALIAS _boost_circular_buffer)
+    target_include_directories(_boost_circular_buffer SYSTEM BEFORE INTERFACE ${LIBRARY_DIR})
+
+    # heap
+    add_library(_boost_heap INTERFACE)
+    add_library(boost::heap ALIAS _boost_heap)
+    target_include_directories(_boost_heap SYSTEM BEFORE INTERFACE ${LIBRARY_DIR})
+
 endif ()

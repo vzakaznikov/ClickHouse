@@ -2,6 +2,7 @@
 
 #include <Parsers/ASTSelectWithUnionQuery.h>
 #include <Parsers/ASTSelectQuery.h>
+#include <Parsers/formatAST.h>
 #include <Interpreters/getTableExpressions.h>
 #include <Interpreters/AddDefaultDatabaseVisitor.h>
 #include <Interpreters/Context.h>
@@ -47,7 +48,7 @@ StorageID extractDependentTableFromSelectQuery(ASTSelectQuery & query, ContextPt
 {
     if (add_default_db)
     {
-        AddDefaultDatabaseVisitor visitor(context->getCurrentDatabase(), false, nullptr);
+        AddDefaultDatabaseVisitor visitor(context, context->getCurrentDatabase());
         visitor.visit(query);
     }
 
@@ -59,8 +60,9 @@ StorageID extractDependentTableFromSelectQuery(ASTSelectQuery & query, ContextPt
     {
         auto * ast_select = subquery->as<ASTSelectWithUnionQuery>();
         if (!ast_select)
-            throw Exception("MATERIALIZED VIEWs are only supported for queries from tables, but there is no table name in select query.",
-                  ErrorCodes::QUERY_IS_NOT_SUPPORTED_IN_MATERIALIZED_VIEW);
+            throw Exception(ErrorCodes::QUERY_IS_NOT_SUPPORTED_IN_MATERIALIZED_VIEW,
+                            "StorageMaterializedView cannot be created from table functions ({})",
+                            serializeAST(*subquery));
         if (ast_select->list_of_selects->children.size() != 1)
             throw Exception("UNION is not supported for MATERIALIZED VIEW",
                   ErrorCodes::QUERY_IS_NOT_SUPPORTED_IN_MATERIALIZED_VIEW);

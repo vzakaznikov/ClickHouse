@@ -13,6 +13,7 @@ void registerTableFunctions()
     registerTableFunctionNumbers(factory);
     registerTableFunctionNull(factory);
     registerTableFunctionZeros(factory);
+    registerTableFunctionExecutable(factory);
     registerTableFunctionFile(factory);
     registerTableFunctionURL(factory);
     registerTableFunctionValues(factory);
@@ -27,6 +28,7 @@ void registerTableFunctions()
 
 #if USE_HDFS
     registerTableFunctionHDFS(factory);
+    registerTableFunctionHDFSCluster(factory);
 #endif
 
     registerTableFunctionODBC(factory);
@@ -40,6 +42,10 @@ void registerTableFunctions()
 
 #if USE_LIBPQXX
     registerTableFunctionPostgreSQL(factory);
+#endif
+
+#if USE_SQLITE
+    registerTableFunctionSQLite(factory);
 #endif
 
     registerTableFunctionDictionary(factory);
